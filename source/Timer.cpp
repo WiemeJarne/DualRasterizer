@@ -87,5 +87,14 @@ namespace dae
 	void Timer::TogglePrintFPS()
 	{
 		m_PrintFPS = !m_PrintFPS;
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6); //set console text color to orange
+
+		if (m_PrintFPS)
+			std::cout << "Print FPS On\n";
+		else
+			std::cout << "Print FPS Off\n";
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15); //set console text color to white
 	}
 }

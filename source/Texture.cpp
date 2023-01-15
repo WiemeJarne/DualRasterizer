@@ -6,7 +6,8 @@
 namespace dae
 {
 	Texture::Texture(SDL_Surface* pSurface, ID3D11Device* pDevice)
-		: m_pSurfacePixels{ (uint32_t*)pSurface->pixels }
+		: m_pSurface{ pSurface }
+		, m_pSurfacePixels{ (uint32_t*)pSurface->pixels }
 	{
 		DXGI_FORMAT format{ DXGI_FORMAT_R8G8B8A8_UNORM };
 		D3D11_TEXTURE2D_DESC desc{};
@@ -41,14 +42,18 @@ namespace dae
 
 		if (FAILED(result))
 			assert("Failed to create directX resource view");
-
-		SDL_FreeSurface(pSurface);
 	}
 
 	Texture::~Texture()
 	{
-		m_pResource->Release();
-		m_pSRV->Release();
+		if(m_pResource)
+			m_pResource->Release();
+
+		if(m_pSRV)
+			m_pSRV->Release();
+
+		if(m_pSurface)
+			SDL_FreeSurface(m_pSurface);
 
 		delete m_pRValue;
 		delete m_pGValue;
@@ -61,14 +66,15 @@ namespace dae
 		return new Texture(surface, pDevice);
 	}
 
-	//ColorRGB Texture::Sample(const Vector2& uv)
-	//{
-		//const Vector2 scaledUV{ uv.x * m_pSurface->w, uv.y * m_pSurface->h };
-		//
-		//Uint32 pixel{ m_pSurfacePixels[static_cast<int>(scaledUV.y) * m_pSurface->h + static_cast<int>(scaledUV.x)] };
-		//
-		//SDL_GetRGB(pixel, m_pSurface->format, m_pRValue, m_pGValue, m_pBValue);
-		//
-		//return { *m_pRValue / 255.f, *m_pGValue / 255.f, *m_pBValue / 255.f };
-	//}
+	ColorRGBA Texture::Sample(const Vector2& uv)
+	{
+		const Vector2 scaledUV{ std::clamp(uv.x, 0.f, 1.f) * m_pSurface->w, std::clamp(uv.y, 0.f, 1.f) * m_pSurface->h };
+
+		Uint32 pixel{ m_pSurfacePixels[static_cast<int>(scaledUV.y) * m_pSurface->h + static_cast<int>(scaledUV.x)] };
+
+		Uint8 rValue{}, gValue{}, bValue{}, alphaValue{};
+		SDL_GetRGBA(pixel, m_pSurface->format, &rValue, &gValue, &bValue, &alphaValue);
+
+		return { rValue / 255.f, gValue / 255.f, bValue / 255.f, alphaValue / 255.f };
+	}
 }

@@ -58,6 +58,11 @@ int main(int argc, char* args[])
 			case SDL_KEYUP:
 				//Test for a key
 				//if (e.key.keysym.scancode == SDL_SCANCODE_X)
+				if (e.key.keysym.scancode == SDL_SCANCODE_F1)
+				{
+					pRenderer->CycleRenderModes();
+				}
+
 				if (e.key.keysym.scancode == SDL_SCANCODE_F2)
 				{
 					pRenderer->ToggleIsRotating();
@@ -73,9 +78,34 @@ int main(int argc, char* args[])
 					pRenderer->ChangeSamplerState();
 				}
 
+				if (e.key.keysym.scancode == SDL_SCANCODE_F5)
+				{
+					pRenderer->CycleShadingMode();
+				}
+
+				if (e.key.keysym.scancode == SDL_SCANCODE_F6)
+				{
+					pRenderer->ToggleNormalMap();
+				}
+
+				if (e.key.keysym.scancode == SDL_SCANCODE_F7)
+				{
+					pRenderer->ToggleDepthBufferVisualization();
+				}
+
+				if (e.key.keysym.scancode == SDL_SCANCODE_F8)
+				{
+					pRenderer->ToggleBoundingBoxVisualization();
+				}
+
 				if (e.key.keysym.scancode == SDL_SCANCODE_F9)
 				{
 					pRenderer->CycleCullModes();
+				}
+
+				if (e.key.keysym.scancode == SDL_SCANCODE_F10)
+				{
+					pRenderer->ToggleUseUniformClearColor();
 				}
 
 				if (e.key.keysym.scancode == SDL_SCANCODE_F11)

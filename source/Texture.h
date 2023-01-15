@@ -1,5 +1,5 @@
 #pragma once
-
+#include "pch.h"
 #include <string>
 #include "ColorRGB.h"
 
@@ -13,12 +13,13 @@ namespace dae
 		~Texture();
 
 		static Texture* LoadFromFile(const std::string& path, ID3D11Device* pDevice);
-		//ColorRGB Sample(const Vector2& uv) ;
+		ColorRGBA Sample(const Vector2& uv);
 		ID3D11ShaderResourceView* GetSRV() const { return m_pSRV; }
 
 	private:
 		Texture(SDL_Surface* pSurface, ID3D11Device* pDevice);
 
+		SDL_Surface* m_pSurface{ nullptr };
 		uint32_t* m_pSurfacePixels{ nullptr };
 		ID3D11ShaderResourceView* m_pSRV{}; // = shader resource view
 		ID3D11Texture2D* m_pResource{};

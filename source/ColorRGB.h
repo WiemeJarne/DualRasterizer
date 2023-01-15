@@ -3,122 +3,131 @@
 
 namespace dae
 {
-	struct ColorRGB
+	struct ColorRGBA
 	{
 		float r{};
 		float g{};
 		float b{};
+		float a{ 1.f };
 
 		void MaxToOne()
 		{
 			const float maxValue = std::max(r, std::max(g, b));
 			if (maxValue > 1.f)
 				*this /= maxValue;
+
+			a = std::min(a, 1.f);
 		}
 
-		static ColorRGB Lerp(const ColorRGB& c1, const ColorRGB& c2, float factor)
+		static ColorRGBA Lerp(const ColorRGBA& c1, const ColorRGBA& c2, float factor)
 		{
-			return { Lerpf(c1.r, c2.r, factor), Lerpf(c1.g, c2.g, factor), Lerpf(c1.b, c2.b, factor) };
+			return { Lerpf(c1.r, c2.r, factor), Lerpf(c1.g, c2.g, factor), Lerpf(c1.b, c2.b, factor), Lerpf(c1.a, c2.b, factor) };
 		}
 
-		#pragma region ColorRGB (Member) Operators
-		const ColorRGB& operator+=(const ColorRGB& c)
+#pragma region ColorRGBA (Member) Operators
+		const ColorRGBA& operator+=(const ColorRGBA& c)
 		{
 			r += c.r;
 			g += c.g;
 			b += c.b;
+			a += c.a;
 
 			return *this;
 		}
 
-		ColorRGB operator+(const ColorRGB& c) const
+		ColorRGBA operator+(const ColorRGBA& c) const
 		{
-			return { r + c.r, g + c.g, b + c.b };
+			return { r + c.r, g + c.g, b + c.b, a + c.a };
 		}
 
-		const ColorRGB& operator-=(const ColorRGB& c)
+		const ColorRGBA& operator-=(const ColorRGBA& c)
 		{
 			r -= c.r;
 			g -= c.g;
 			b -= c.b;
+			a -= c.a;
 
 			return *this;
 		}
 
-		ColorRGB operator-(const ColorRGB& c) const
+		ColorRGBA operator-(const ColorRGBA& c) const
 		{
-			return { r - c.r, g - c.g, b - c.b };
+			return { r - c.r, g - c.g, b - c.b, a - c.a };
 		}
 
-		const ColorRGB& operator*=(const ColorRGB& c)
+		const ColorRGBA& operator*=(const ColorRGBA& c)
 		{
 			r *= c.r;
 			g *= c.g;
 			b *= c.b;
+			a *= c.a;
 
 			return *this;
 		}
 
-		ColorRGB operator*(const ColorRGB& c) const
+		ColorRGBA operator*(const ColorRGBA& c) const
 		{
-			return { r * c.r, g * c.g, b * c.b };
+			return { r * c.r, g * c.g, b * c.b, a * c.a };
 		}
 
-		const ColorRGB& operator/=(const ColorRGB& c)
+		const ColorRGBA& operator/=(const ColorRGBA& c)
 		{
 			r /= c.r;
 			g /= c.g;
 			b /= c.b;
+			a /= c.a;
 
 			return *this;
 		}
 
-		const ColorRGB& operator*=(float s)
+		const ColorRGBA& operator*=(float s)
 		{
 			r *= s;
 			g *= s;
 			b *= s;
+			a *= s;
 
 			return *this;
 		}
 
-		ColorRGB operator*(float s) const
+		ColorRGBA operator*(float s) const
 		{
-			return { r * s, g * s,b * s };
+			return { r * s, g * s, b * s, a * s };
 		}
 
-		const ColorRGB& operator/=(float s)
+		const ColorRGBA& operator/=(float s)
 		{
 			r /= s;
 			g /= s;
 			b /= s;
+			a /= s;
 
 			return *this;
 		}
 
-		ColorRGB operator/(float s) const
+		ColorRGBA operator/(float s) const
 		{
-			return { r / s, g / s,b / s };
+			return { r / s, g / s, b / s, a / s };
 		}
-		#pragma endregion
+#pragma endregion
 	};
 
-	//ColorRGB (Global) Operators
-	inline ColorRGB operator*(float s, const ColorRGB& c)
+	//ColorRGBA (Global) Operators
+	inline ColorRGBA operator*(float s, const ColorRGBA& c)
 	{
 		return c * s;
 	}
 
 	namespace colors
 	{
-		static ColorRGB Red{ 1,0,0 };
-		static ColorRGB Blue{ 0,0,1 };
-		static ColorRGB Green{ 0,1,0 };
-		static ColorRGB Yellow{ 1,1,0 };
-		static ColorRGB Cyan{ 0,1,1 };
-		static ColorRGB Magenta{ 1,0,1 };
-		static ColorRGB White{ 1,1,1 };
-		static ColorRGB Black{ 0,0,0 };
-		static ColorRGB Gray{ 0.5f,0.5f,0.5f };
+		static ColorRGBA Red{ 1,0,0 };
+		static ColorRGBA Blue{ 0,0,1 };
+		static ColorRGBA Green{ 0,1,0 };
+		static ColorRGBA Yellow{ 1,1,0 };
+		static ColorRGBA Cyan{ 0,1,1 };
+		static ColorRGBA Magenta{ 1,0,1 };
+		static ColorRGBA White{ 1,1,1 };
+		static ColorRGBA Black{ 0,0,0 };
+		static ColorRGBA Gray{ 0.5f,0.5f,0.5f };
 	}
 }

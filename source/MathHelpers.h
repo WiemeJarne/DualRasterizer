@@ -56,4 +56,12 @@ namespace dae
 		if (v > 1.f) return 1.f;
 		return v;
 	}
+
+	inline float Remap(float value, const float low = 0.985f, const float high = 1.f)
+	{
+		value = std::max(value, low);
+		value = std::min(value, high);
+
+		return (value - low) / (high - low);
+	}
 }

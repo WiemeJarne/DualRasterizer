@@ -18,13 +18,15 @@ namespace dae {
 		HRESULT result = InitializeDirectX();
 		if (result == S_OK)
 		{
-			m_IsInitialized = true;
+			m_DirectXIsInitialized = true;
 			std::cout << "DirectX is initialized and ready!\n";
 		}
 		else
 		{
 			std::cout << "DirectX initialization failed!\n";
 		}
+
+		InitializeSoftwareRasterizer();
 
 		m_RasterizerDesc.FillMode = D3D11_FILL_SOLID;
 		m_RasterizerDesc.CullMode = D3D11_CULL_BACK;
@@ -42,8 +44,8 @@ namespace dae {
 		m_pAnisotropicSampler = new Sampler(m_pDevice, Sampler::SamplerStateKind::anisotropic);
 
 		//create the meshes and change it samplerState
-		m_pCombustionEffectMesh = new PartialCoverageMesh(m_pDevice, "Resources/fireFX.obj", L"Resources/PosUV.fx");
-		m_pVehicleMesh = new OpaqueMesh(m_pDevice, "Resources/vehicle.obj", L"Resources/PosTex.fx");
+		m_pFireFXMesh = new PartialCoverageMesh(m_pDevice, "Resources/fireFX.obj", L"Resources/PosUV.fx", Mesh::CullMode::None, static_cast<float>(m_Width), static_cast<float>(m_Height));
+		m_pVehicleMesh = new OpaqueMesh(m_pDevice, "Resources/vehicle.obj", L"Resources/PosTex.fx", Mesh::CullMode::BackFace, static_cast<float>(m_Width), static_cast<float>(m_Height));
 		m_pVehicleMesh->ChangeSamplerState(m_pDevice, m_pPointSampler);
 		m_pVehicleMesh->SetRasterizerState(pRasterizerState);
 		
@@ -57,11 +59,13 @@ namespace dae {
 		m_pSpecular = Texture::LoadFromFile("Resources/vehicle_specular.png", m_pDevice);
 		m_pGlossiness = Texture::LoadFromFile("Resources/vehicle_gloss.png", m_pDevice);
 
-		m_pCombustionEffectMesh->SetDiffuseMap(m_pCombustionEffectDiffuse);
+		m_pFireFXMesh->SetDiffuseMap(m_pCombustionEffectDiffuse);
 		m_pVehicleMesh->SetDiffuseMap(m_pVehicleDiffuse);
 		m_pVehicleMesh->SetNormalMap(m_pNormal);
 		m_pVehicleMesh->SetSpecularMap(m_pSpecular);
 		m_pVehicleMesh->SetGlossinessMap(m_pGlossiness);
+
+		PrintInfo();
 	}
 
 	Renderer::~Renderer()
@@ -91,7 +95,7 @@ namespace dae {
 		if (m_pDevice)
 			m_pDevice->Release();
 
-		delete m_pCombustionEffectMesh;
+		delete m_pFireFXMesh;
 		delete m_pVehicleMesh;
 		
 		delete m_pCombustionEffectDiffuse;
@@ -111,35 +115,72 @@ namespace dae {
 
 		if (m_IsRotating)
 		{
-			m_pCombustionEffectMesh->RotateYCW(m_pCombustionEffectMesh->GetRotationAngle() + pTimer->GetElapsed() * m_pCombustionEffectMesh->GetRotationSpeed());
+			m_pFireFXMesh->RotateYCW(m_pFireFXMesh->GetRotationAngle() + pTimer->GetElapsed() * m_pFireFXMesh->GetRotationSpeed());
 			m_pVehicleMesh->RotateYCW(m_pVehicleMesh->GetRotationAngle() + pTimer->GetElapsed() * m_pVehicleMesh->GetRotationSpeed());
 		}
 
-		m_pCombustionEffectMesh->SetWorldViewProjMatrix(m_pCombustionEffectMesh->GetWorldMatrix() * m_Camera.viewMatrix * m_Camera.projectionMatrix);
+		m_pFireFXMesh->SetWorldViewProjMatrix(m_pFireFXMesh->GetWorldMatrix() * m_Camera.viewMatrix * m_Camera.projectionMatrix);
 		m_pVehicleMesh->SetWorldViewProjMatrix(m_pVehicleMesh->GetWorldMatrix() * m_Camera.viewMatrix * m_Camera.projectionMatrix);
 		m_pVehicleMesh->SetViewInverseMatrix(m_Camera.invViewMatrix);
 	}
 
 	void Renderer::Render() const
 	{
-		if (!m_IsInitialized)
-			return;
-
-		//1. Clear RTV and DSV
-		ColorRGB clearColor{ 0.39f, 0.59f, 0.93f };
-		m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, &clearColor.r);
-		m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
-
-		//2. Set pipeline + invoke drawcalls (= render)
-		m_pVehicleMesh->Render(m_pDeviceContext);
-
-		if (m_RenderFireFX)
+		switch (m_RenderMode)
 		{
-			m_pCombustionEffectMesh->Render(m_pDeviceContext);
+		case dae::Renderer::RenderMode::Directx:
+			RenderInDirectX();
+			break;
+
+		case dae::Renderer::RenderMode::SoftwareRasterizer:
+			RenderInSoftwareRasterizer();
+			break;
+		}
+	}
+
+	void Renderer::InitializeSoftwareRasterizer()
+	{
+		//Create Buffers
+		m_pFrontBuffer = SDL_GetWindowSurface(m_pWindow);
+		m_pBackBuffer = SDL_CreateRGBSurface(0, m_Width, m_Height, 32, 0, 0, 0, 0);
+		m_pBackBufferPixels = (uint32_t*)m_pBackBuffer->pixels;
+
+		const int amountOfPixels{ m_Width * m_Height };
+		m_pDepthBufferPixels = new float[amountOfPixels];
+		//fill depth buffer with ifiniy as value
+		for (int index{}; index < amountOfPixels; ++index)
+		{
+			m_pDepthBufferPixels[index] = INFINITY;
+		}
+	}
+
+	void Renderer::RenderInSoftwareRasterizer() const
+	{
+		//@START
+		if (m_UseUniformClearColor)
+		{
+			SDL_FillRect(m_pBackBuffer, NULL, SDL_MapRGB(m_pBackBuffer->format, static_cast<Uint8>(m_UniformClearColor.r * 255.f), static_cast<Uint8>(m_UniformClearColor.g * 255.f), static_cast<Uint8>(m_UniformClearColor.b * 255.f)));
+		}
+		else
+		{
+			Uint8 redValue{ 99 }, greenValue{ 99 }, blueValue{ 99 };
+			SDL_FillRect(m_pBackBuffer, NULL, SDL_MapRGB(m_pBackBuffer->format, redValue, greenValue, blueValue));
 		}
 		
-		//3. Present BackBuffer (swap)
-		m_pSwapChain->Present(0, 0);
+		std::fill_n(m_pDepthBufferPixels, m_Width * m_Height, INFINITY);
+		//Lock BackBuffer
+		SDL_LockSurface(m_pBackBuffer);
+
+		m_pVehicleMesh->RenderInSoftwareRasterizer(m_Camera, m_pDepthBufferPixels, m_pBackBuffer, m_pBackBufferPixels);
+
+		if(m_RenderFireFX)
+			m_pFireFXMesh->RenderInSoftwareRasterizer(m_Camera, m_pDepthBufferPixels, m_pBackBuffer, m_pBackBufferPixels);
+
+		//@END
+	//Update SDL Surface
+		SDL_UnlockSurface(m_pBackBuffer);
+		SDL_BlitSurface(m_pBackBuffer, 0, m_pFrontBuffer, 0);
+		SDL_UpdateWindowSurface(m_pWindow);
 	}
 
 	HRESULT Renderer::InitializeDirectX()
@@ -275,29 +316,63 @@ namespace dae {
 		return result;
 	}
 
+	void Renderer::RenderInDirectX() const
+	{
+		if (!m_DirectXIsInitialized)
+			return;
+
+		//1. Clear RTV and DSV
+		if (m_UseUniformClearColor)
+		{
+			m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, &m_UniformClearColor.r);
+		}
+		else
+		{
+			ColorRGBA clearColor{ 0.39f, 0.59f, 0.93f };
+			m_pDeviceContext->ClearRenderTargetView(m_pRenderTargetView, &clearColor.r);
+		}
+		
+		m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
+
+		//2. Set pipeline + invoke drawcalls (= render)
+		m_pVehicleMesh->RenderInDirectX(m_pDeviceContext);
+
+		if (m_RenderFireFX)
+			m_pFireFXMesh->RenderInDirectX(m_pDeviceContext);
+
+		//3. Present BackBuffer (swap)
+		m_pSwapChain->Present(0, 0);
+	}
+
 	void Renderer::ChangeSamplerState()
 	{
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2); //set console text color to green
+
 		switch (m_pVehicleMesh->GetSamplerStateKind())
 		{
 		case Sampler::SamplerStateKind::point:
 			m_pVehicleMesh->ChangeSamplerState(m_pDevice, m_pLinearSampler);
-			std::cout << "SamplerState changed to linear\n";
+			std::cout << "Sampler Filter = LINEAR\n";
 			break;
 
 		case Sampler::SamplerStateKind::linear:
 			m_pVehicleMesh->ChangeSamplerState(m_pDevice, m_pAnisotropicSampler);
-			std::cout << "SamplerState changed to anisotropic\n";
+			std::cout << "Sampler Filter = ANISOTROPIC\n";
 			break;
 
 		case Sampler::SamplerStateKind::anisotropic:
 			m_pVehicleMesh->ChangeSamplerState(m_pDevice, m_pPointSampler);
-			std::cout << "SamplerState changed to point\n";
+			std::cout << "Sampler Filter = POINT\n";
 			break;
 		}
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15); //set console text color to white
 	}
 
 	void Renderer::CycleCullModes()
 	{
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6); //set console text color to orange
+
 		switch (m_RasterizerDesc.CullMode)
 		{
 		case D3D11_CULL_BACK:
@@ -316,6 +391,8 @@ namespace dae {
 			break;
 		}
 
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15); //set console text color to white
+
 		HRESULT result{};
 		ID3D11RasterizerState* pRasterizerState{};
 		result = m_pDevice->CreateRasterizerState(&m_RasterizerDesc, &pRasterizerState);
@@ -326,14 +403,119 @@ namespace dae {
 		m_pVehicleMesh->SetRasterizerState(pRasterizerState);
 	}
 
+	void Renderer::CycleRenderModes()
+	{
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6); //set console text color to orange
+
+		switch (m_RenderMode)
+		{
+		case RenderMode::Directx:
+			m_RenderMode = RenderMode::SoftwareRasterizer;
+			std::cout << "Rasterizer Mode = SOFTWARE\n";
+			break;
+
+		case RenderMode::SoftwareRasterizer:
+			m_RenderMode = RenderMode::Directx;
+			std::cout << "Rasterizer Mode = HARDWARE\n";
+			break;
+		}
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15); //set console text color to white
+	}
+
 	void Renderer::ToggleIsRotating()
 	{
 		m_IsRotating = !m_IsRotating;
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6); //set console text color to orange
+
+		if (m_IsRotating)
+			std::cout << "Rotation On\n";
+		else
+			std::cout << "Rotation Off\n";
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15); //set console text color to white
+	}
+
+	void Renderer::ToggleUseUniformClearColor()
+	{
+		m_UseUniformClearColor = !m_UseUniformClearColor;
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6); //set console text color to orange
+
+		if (m_UseUniformClearColor)
+			std::cout << "Uniform ClearColor On\n";
+		else
+			std::cout << "Uniform ClearColor Off\n";
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15); //set console text color to white
 	}
 
 	void Renderer::ToggleFireFX()
 	{
 		m_RenderFireFX = !m_RenderFireFX;
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6); //set console text color to orange
+
+		if(m_RenderFireFX)
+			std::cout << "FireFX mesh On\n";
+		else
+			std::cout << "FireFX mesh Off\n";
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15); //set console text color to white
+	}
+
+	void Renderer::CycleShadingMode()
+	{
+		if (m_RenderMode == RenderMode::SoftwareRasterizer)
+			m_pVehicleMesh->CycleShadingMode();
+	}
+
+	void Renderer::ToggleNormalMap()
+	{
+		if (m_RenderMode == RenderMode::SoftwareRasterizer)
+			m_pVehicleMesh->ToggleUseNormalMap();
+	}
+
+	void Renderer::ToggleDepthBufferVisualization()
+	{
+		if (m_RenderMode == RenderMode::SoftwareRasterizer)
+			m_pVehicleMesh->ToggleDepthBufferVisualization();
+	}
+
+	void Renderer::ToggleBoundingBoxVisualization()
+	{
+		if (m_RenderMode == RenderMode::SoftwareRasterizer)
+			m_pVehicleMesh->ToggleBoundingBoxVisualization();
+	}
+
+	void Renderer::PrintInfo()
+	{
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6); //set console text color to orange
+		
+		std::cout << "KEY BINDINGS:\n";
+		std::cout << "\n\tSHARED:\n";
+		std::cout << "\tToggle between DirectX & Software Rasterizer [F1]\n";
+		std::cout << "\tToggle Rotation (On/Off) [F2]\n";
+		std::cout << "\tToggle FireFX mesh (On/Off) [F3]\n";
+		std::cout << "\tCycle Cull Modes (back-face, front-face, none) [F9]\n";
+		std::cout << "\tToggle Uniform ClearColor [F10]\n";
+		std::cout << "\tToggle Print FPS (On/Off) [F11]\n";
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2); //set console text color to green
+
+		std::cout << "\n\tHARDWARE ONLY:\n";
+		std::cout << "\tToggle between Texture Sampling States (point-linear-anisotropic) [F4]\n";
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 5); //set console text color to purple
+
+		std::cout << "\n\tSOFTWARE ONLY:\n";
+		std::cout << "\tCycle Shading Mode (Combined/ObservedArea/Diffuse/Specular) [F5]\n";
+		std::cout << "\tToggle NormalMap (On/Off) [F6]\n";
+		std::cout << "\tToggle DepthBuffer Visualization (On/Off) [F7]\n";
+		std::cout << "\tToggle BoundingBox Visualization (On/Off) [F8]\n";
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15); //set console text color to white
 	}
 }
 

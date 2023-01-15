@@ -25,10 +25,18 @@ namespace dae
 
 		void Update(const Timer* pTimer);
 		void Render() const;
-		void ChangeSamplerState();
-		void CycleCullModes();
+		void CycleRenderModes();
 		void ToggleIsRotating();
 		void ToggleFireFX();
+		void ChangeSamplerState();
+		void CycleShadingMode();
+		void ToggleNormalMap();
+		void ToggleDepthBufferVisualization();
+		void ToggleBoundingBoxVisualization();
+		void CycleCullModes();
+		void ToggleUseUniformClearColor();
+		
+
 
 	private:
 		SDL_Window* m_pWindow{};
@@ -38,8 +46,7 @@ namespace dae
 
 		Camera m_Camera{};
 
-		bool m_IsInitialized{ false };
-		bool m_UseUniformClearColor{ false };
+		bool m_DirectXIsInitialized{ false };
 
 		ID3D11Device* m_pDevice;
 		ID3D11DeviceContext* m_pDeviceContext;
@@ -62,15 +69,38 @@ namespace dae
 		Texture* m_pGlossiness;
 
 		OpaqueMesh* m_pVehicleMesh{};
-		PartialCoverageMesh* m_pCombustionEffectMesh{};
+		PartialCoverageMesh* m_pFireFXMesh{};
 
 		D3D11_RASTERIZER_DESC m_RasterizerDesc{};
 
+		SDL_Surface* m_pFrontBuffer{ nullptr };
+		SDL_Surface* m_pBackBuffer{ nullptr };
+		uint32_t* m_pBackBufferPixels{};
+
+		float* m_pDepthBufferPixels{};
+
+		ColorRGBA m_UniformClearColor{ 0.1f, 0.1f, 0.1f };
+
+		enum class RenderMode
+		{
+			Directx,
+			SoftwareRasterizer
+		};
+
+		RenderMode m_RenderMode{ RenderMode::SoftwareRasterizer };
+
 		bool m_IsRotating{ true };
+		bool m_UseUniformClearColor{ false };
 		bool m_RenderFireFX{ true };
+
+		void PrintInfo();
+
+		void InitializeSoftwareRasterizer();
+		void RenderInSoftwareRasterizer() const;
 
 		//DIRECTX
 		HRESULT InitializeDirectX();
+		void RenderInDirectX() const;
 		//...
 	};
 }

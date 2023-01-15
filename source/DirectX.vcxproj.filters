@@ -38,7 +38,6 @@
     </ClInclude>
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Camera.h" />
-    <ClInclude Include="Texture.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="Sampler.h">
       <Filter>Misc</Filter>
@@ -56,6 +55,9 @@
       <Filter>Misc</Filter>
     </ClInclude>
     <ClInclude Include="PartialCoverageMesh.h">
+      <Filter>Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
       <Filter>Misc</Filter>
     </ClInclude>
   </ItemGroup>
@@ -79,9 +81,6 @@
     </ClCompile>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="Texture.cpp">
-      <Filter>Math</Filter>
-    </ClCompile>
     <ClCompile Include="Sampler.cpp">
       <Filter>Misc</Filter>
     </ClCompile>
@@ -98,6 +97,9 @@
       <Filter>Misc</Filter>
     </ClCompile>
     <ClCompile Include="PartialCoverageMesh.cpp">
+      <Filter>Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
       <Filter>Misc</Filter>
     </ClCompile>
   </ItemGroup>
