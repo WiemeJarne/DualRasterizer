@@ -14,12 +14,6 @@ namespace dae
 			std::wcout << L"m_pSamplerStateVariable not valid!\n";
 		}
 
-		m_pRasterizerState = m_pEffect->GetVariableByName("gRasterizerState")->AsRasterizer();
-		if (!m_pRasterizerState->IsValid())
-		{
-			std::wcout << L"m_pRasterizerState not valid!\n";
-		}
-
 		m_pWorldMatrixVariable = m_pEffect->GetVariableByName("gWorld")->AsMatrix();
 		if (!m_pWorldMatrixVariable->IsValid())
 		{
@@ -62,22 +56,22 @@ namespace dae
 		if (m_pSamplerStateVariable)
 			m_pSamplerStateVariable->Release();
 
-		if (m_pSamplerStateVariable)
+		if (m_pWorldMatrixVariable)
 			m_pWorldMatrixVariable->Release();
 
-		if (m_pSamplerStateVariable)
+		if (m_pInvViewMatrix)
 			m_pInvViewMatrix->Release();
 
-		if (m_pSamplerStateVariable)
+		if (m_pDiffuseMapVariable)
 			m_pDiffuseMapVariable->Release();
 
-		if (m_pSamplerStateVariable)
+		if (m_pNormalMapVariable)
 			m_pNormalMapVariable->Release();
 
-		if (m_pSamplerStateVariable)
+		if (m_pSpecularMapVariable)
 			m_pSpecularMapVariable->Release();
 
-		if (m_pSamplerStateVariable)
+		if (m_pGlossinessMapVariable)
 			m_pGlossinessMapVariable->Release();
 	}
 
@@ -86,14 +80,6 @@ namespace dae
 		if (m_pSamplerStateVariable)
 		{
 			m_pSamplerStateVariable->SetSampler(0, pSamplerState);
-		}
-	}
-
-	void OpaqueEffect::SetRasterizerState(ID3D11RasterizerState* rasterizerState)
-	{
-		if (m_pRasterizerState)
-		{
-			m_pRasterizerState->SetRasterizerState(0, rasterizerState);
 		}
 	}
 

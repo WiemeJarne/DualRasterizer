@@ -15,7 +15,6 @@ namespace dae
 		OpaqueEffect& operator=(OpaqueEffect&& other) = delete;
 
 		void SetSamplerState(ID3D11SamplerState* pSamplerState);
-		void SetRasterizerState(ID3D11RasterizerState* rasterizerState);
 		void SetWorldMatrix(const dae::Matrix& worldMatrix);
 		void SetViewInverseMatrix(const dae::Matrix& invViewMatrix);
 		void SetDiffuseMap(dae::Texture* pDiffuseTexture);
@@ -25,7 +24,6 @@ namespace dae
 
 	private:
 		ID3DX11EffectSamplerVariable* m_pSamplerStateVariable;
-		ID3DX11EffectRasterizerVariable* m_pRasterizerState;
 		ID3DX11EffectMatrixVariable* m_pWorldMatrixVariable;
 		ID3DX11EffectMatrixVariable* m_pInvViewMatrix;
 		ID3DX11EffectShaderResourceVariable* m_pDiffuseMapVariable;

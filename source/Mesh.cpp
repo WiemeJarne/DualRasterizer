@@ -62,6 +62,8 @@ namespace dae
 		{
 			m_pIndexBuffer->Release();
 		}
+
+		
 	}
 
 	void Mesh::RotateYCW(float angle)
@@ -278,5 +280,23 @@ namespace dae
 			static_cast<uint8_t>(color.r * 255),
 			static_cast<uint8_t>(color.g * 255),
 			static_cast<uint8_t>(color.b * 255));
+	}
+
+	void Mesh::CycleCullMode()
+	{
+		switch (m_CullMode)
+		{
+		case dae::Mesh::CullMode::BackFace:
+			m_CullMode = CullMode::FrontFace;
+			break;
+
+		case dae::Mesh::CullMode::FrontFace:
+			m_CullMode = CullMode::None;
+			break;
+
+		case dae::Mesh::CullMode::None:
+			m_CullMode = CullMode::BackFace;
+			break;
+		}
 	}
 }

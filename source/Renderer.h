@@ -87,7 +87,7 @@ namespace dae
 			SoftwareRasterizer
 		};
 
-		RenderMode m_RenderMode{ RenderMode::SoftwareRasterizer };
+		RenderMode m_RenderMode{ RenderMode::Directx };
 
 		bool m_IsRotating{ true };
 		bool m_UseUniformClearColor{ false };
