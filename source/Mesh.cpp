@@ -268,7 +268,7 @@ namespace dae
 		{
 			Vector3{v0.viewDirection * w0 * v0.position.w
 					+ v1.viewDirection * w1 * v1.position.w
-					+ v2.viewDirection * w2 * v2.position.w}
+					+ v2.viewDirection * w2 * v2.position.w}.Normalized()
 		};
 
 		return pixel;
