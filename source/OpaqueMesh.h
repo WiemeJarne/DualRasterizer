@@ -46,12 +46,12 @@ namespace dae
 		OpaqueEffect* m_pEffect;
 
 		Sampler::SamplerStateKind m_SamplerState;
-		ID3D11RasterizerState* m_pRasterizerState{};
+		ID3D11RasterizerState* m_pRasterizerState{ nullptr };
 
-		Texture* m_pDiffuseMap;
-		Texture* m_pNormalMap;
-		Texture* m_pSpecularMap;
-		Texture* m_pGlossinessMap;
+		Texture* m_pDiffuseMap{ nullptr };
+		Texture* m_pNormalMap{ nullptr };
+		Texture* m_pSpecularMap{ nullptr };
+		Texture* m_pGlossinessMap{ nullptr };
 
 		bool m_UseNormalMap{ true };
 		bool m_VisualizeDepthBuffer{};

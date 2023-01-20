@@ -64,15 +64,14 @@ namespace dae
 			if (m_Indices[index] == m_Indices[index + 1]
 				|| m_Indices[index + 1] == m_Indices[index + 2]
 				|| m_Indices[index + 2] == m_Indices[index])
-			{
 				continue;
-			}
 
 			Vertex_Out& vertex0{ m_VerticesOut[m_Indices[index]] };
 			Vertex_Out& vertex1{ m_VerticesOut[m_Indices[index + 1]] };
 			Vertex_Out& vertex2{ m_VerticesOut[m_Indices[index + 2]] };
 
-			IsTriangleInFrustum(vertex0, vertex1, vertex2);
+			if (!IsTriangleInFrustum(vertex0, vertex1, vertex2))
+				continue;
 
 			const Vector2 v0{ vertex0.position.x, vertex0.position.y };
 			const Vector2 v1{ vertex1.position.x, vertex1.position.y };
@@ -229,10 +228,9 @@ namespace dae
 			ColorRGBA diffuse{};
 			
 			diffuse = lightIntensity * m_pDiffuseMap->Sample(vertex.uv) / PI;
-			
 
 			//specular phong
-			ColorRGBA specular{ m_pSpecularMap->Sample(vertex.uv) * powf(std::max(Vector3::Dot(2.f * std::max(Vector3::Dot(normal, -lightDirection), 0.f) * normal - -lightDirection, vertex.viewDirection), 0.f), shininess * m_pGlossinessMap->Sample(vertex.uv).r) }; //glossinessMap is greyscale so all channels have the same value
+			ColorRGBA specular{m_pSpecularMap->Sample(vertex.uv) * powf(std::max(Vector3::Dot(Vector3::Reflect(-lightDirection, normal), vertex.viewDirection), 0.f),  m_pGlossinessMap->Sample(vertex.uv).r * shininess )}; //glossinessMap is greyscale so all channels have the same value
 
 			return (diffuse + specular + ambient) * observedArea;
 		}

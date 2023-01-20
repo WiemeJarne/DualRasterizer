@@ -169,16 +169,6 @@ namespace dae
 
 	bool Mesh::IsTriangleInFrustum(const Vertex_Out& v0, const Vertex_Out& v1, const Vertex_Out& v2)
 	{
-		if (v0.position.x < -1.f || v0.position.x > 1.f
-			|| v1.position.x < -1.f || v1.position.x > 1.f
-			|| v2.position.x < -1.f || v2.position.x > 1.f)
-			return false;
-
-		if (v0.position.y < -1.f || v0.position.y > 1.f
-			|| v1.position.y < -1.f || v1.position.y > 1.f
-			|| v2.position.y < -1.f || v2.position.y > 1.f)
-			return false;
-
 		if (v0.position.z < 0.f || v0.position.z > 1.f
 			|| v1.position.z < 0.f || v1.position.z > 1.f
 			|| v2.position.z < 0.f || v2.position.z > 1.f)
@@ -280,23 +270,5 @@ namespace dae
 			static_cast<uint8_t>(color.r * 255),
 			static_cast<uint8_t>(color.g * 255),
 			static_cast<uint8_t>(color.b * 255));
-	}
-
-	void Mesh::CycleCullMode()
-	{
-		switch (m_CullMode)
-		{
-		case dae::Mesh::CullMode::BackFace:
-			m_CullMode = CullMode::FrontFace;
-			break;
-
-		case dae::Mesh::CullMode::FrontFace:
-			m_CullMode = CullMode::None;
-			break;
-
-		case dae::Mesh::CullMode::None:
-			m_CullMode = CullMode::BackFace;
-			break;
-		}
 	}
 }

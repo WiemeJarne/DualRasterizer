@@ -48,7 +48,7 @@ namespace dae
 		const Matrix& GetWorldMatrix() const { return m_WorldMatrix; }
 		float GetRotationSpeed() const { return m_RotationSpeed; }
 		float GetRotationAngle() const { return m_RotationAngle; }
-		void CycleCullMode();
+		void SetCullMode(CullMode cullMode) { m_CullMode = cullMode; }
 
 	protected:
 		Matrix m_WorldMatrix

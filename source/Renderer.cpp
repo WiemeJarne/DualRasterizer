@@ -29,7 +29,7 @@ namespace dae {
 		InitializeSoftwareRasterizer();
 
 		m_RasterizerDesc.FillMode = D3D11_FILL_SOLID;
-		m_RasterizerDesc.CullMode = D3D11_CULL_FRONT;
+		m_RasterizerDesc.CullMode = D3D11_CULL_BACK;
 
 		ID3D11RasterizerState* pRasterizerState{};
 
@@ -371,24 +371,25 @@ namespace dae {
 
 	void Renderer::CycleCullModes()
 	{
-		m_pVehicleMesh->CycleCullMode();
-
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 6); //set console text color to orange
 
 		switch (m_RasterizerDesc.CullMode)
 		{
 		case D3D11_CULL_BACK:
 			m_RasterizerDesc.CullMode = D3D11_CULL_FRONT;
+			m_pVehicleMesh->SetCullMode(Mesh::CullMode::FrontFace);
 			std::cout << "CullMode = FRONT\n";
 			break;
 		
 		case D3D11_CULL_FRONT:
 			m_RasterizerDesc.CullMode = D3D11_CULL_NONE;
+			m_pVehicleMesh->SetCullMode(Mesh::CullMode::None);
 			std::cout << "CullMode = NONE\n";
 			break;
 
 		case D3D11_CULL_NONE:
 			m_RasterizerDesc.CullMode = D3D11_CULL_BACK;
+			m_pVehicleMesh->SetCullMode(Mesh::CullMode::BackFace);
 			std::cout << "CullMode = BACK\n";
 			break;
 		}
