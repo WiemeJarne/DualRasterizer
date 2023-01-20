@@ -218,9 +218,9 @@ namespace dae {
 			return result;
 
 		//Create DXGI Factory
-		IDXGIFactory* pDxgiFactory{};
+		IDXGIFactory1* pDxgiFactory{};
 
-		result = CreateDXGIFactory1(__uuidof(IDXGIFactory), reinterpret_cast<void**>(&pDxgiFactory));
+		result = CreateDXGIFactory1(__uuidof(IDXGIFactory1), reinterpret_cast<void**>(&pDxgiFactory));
 
 		if (FAILED(result))
 			return result;
