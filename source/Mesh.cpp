@@ -169,6 +169,16 @@ namespace dae
 
 	bool Mesh::IsTriangleInFrustum(const Vertex_Out& v0, const Vertex_Out& v1, const Vertex_Out& v2)
 	{
+		if (v0.position.x < 0.f || v0.position.x > m_WindowWidth
+			|| v1.position.x < 0.f || v1.position.x > m_WindowWidth
+			|| v2.position.x < 0.f || v2.position.x > m_WindowWidth)
+			return false;
+
+		if (v0.position.y < 0.f || v0.position.y > m_WindowHeight
+			|| v1.position.y < 0.f || v1.position.y > m_WindowHeight
+			|| v2.position.y < 0.f || v2.position.y > m_WindowHeight)
+			return false;
+
 		if (v0.position.z < 0.f || v0.position.z > 1.f
 			|| v1.position.z < 0.f || v1.position.z > 1.f
 			|| v2.position.z < 0.f || v2.position.z > 1.f)
