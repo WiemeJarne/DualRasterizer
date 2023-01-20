@@ -230,7 +230,7 @@ namespace dae
 			diffuse = lightIntensity * m_pDiffuseMap->Sample(vertex.uv) / PI;
 
 			//specular phong
-			ColorRGBA specular{m_pSpecularMap->Sample(vertex.uv) * powf(std::max(Vector3::Dot(Vector3::Reflect(-lightDirection, normal), vertex.viewDirection), 0.f),  m_pGlossinessMap->Sample(vertex.uv).r * shininess )}; //glossinessMap is greyscale so all channels have the same value
+			ColorRGBA specular{m_pSpecularMap->Sample(vertex.uv) * powf(std::max(Vector3::Dot(Vector3::Reflect(lightDirection, normal), vertex.viewDirection), 0.f),  m_pGlossinessMap->Sample(vertex.uv).r * shininess )}; //glossinessMap is greyscale so all channels have the same value
 
 			return (diffuse + specular + ambient) * observedArea;
 		}
