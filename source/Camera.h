@@ -19,6 +19,8 @@ namespace dae
 		{
 		}
 
+		float movementSpeed{ 100.f };
+		float rotationSpeed{ 180.f * TO_RADIANS };
 
 		Vector3 origin{};
 		float fovAngle{90.f};
@@ -78,8 +80,6 @@ namespace dae
 
 			//Camera Update Logic
 			//...
-			float cameraMovementSpeed{ 20.f };
-			float cameraRotationSpeed{ 180.f * TO_RADIANS };
 			const float elapsedSec{ pTimer->GetElapsed() };
 
 			//Keyboard Input
@@ -87,28 +87,28 @@ namespace dae
 
 			if (pKeyboardState[SDL_SCANCODE_LSHIFT])
 			{
-				cameraMovementSpeed *= 4;
-				cameraRotationSpeed *= 4;
+				movementSpeed *= 1.5f;
+				rotationSpeed *= 1.5f;
 			}
 
 			if (pKeyboardState[SDL_SCANCODE_W] || pKeyboardState[SDL_SCANCODE_UP])
 			{
-				origin += forward * cameraMovementSpeed * elapsedSec;
+				origin += forward * movementSpeed * elapsedSec;
 			}
 
 			if (pKeyboardState[SDL_SCANCODE_S] || pKeyboardState[SDL_SCANCODE_DOWN])
 			{
-				origin += -forward * cameraMovementSpeed * elapsedSec;
+				origin += -forward * movementSpeed * elapsedSec;
 			}
 
 			if (pKeyboardState[SDL_SCANCODE_D] || pKeyboardState[SDL_SCANCODE_RIGHT])
 			{
-				origin += right * cameraMovementSpeed * elapsedSec;
+				origin += right * movementSpeed * elapsedSec;
 			}
 
 			if (pKeyboardState[SDL_SCANCODE_A] || pKeyboardState[SDL_SCANCODE_LEFT])
 			{
-				origin += -right * cameraMovementSpeed * elapsedSec;
+				origin += -right * movementSpeed * elapsedSec;
 			}
 
 			//change fov
@@ -130,66 +130,66 @@ namespace dae
 			{
 				if (mouseY > 0)
 				{
-					origin += -up * cameraMovementSpeed * elapsedSec;
+					origin += -up * movementSpeed * elapsedSec;
 				}
 
 				if (mouseY < 0)
 				{
-					origin += up * cameraMovementSpeed * elapsedSec;
+					origin += up * movementSpeed * elapsedSec;
 				}
 
 				if (mouseX > 0)
 				{
-					origin += right * cameraMovementSpeed * elapsedSec;
+					origin += right * movementSpeed * elapsedSec;
 				}
 
 				if (mouseX < 0)
 				{
-					origin += -right * cameraMovementSpeed * elapsedSec;
+					origin += -right * movementSpeed * elapsedSec;
 				}
 			}
 			else if (mouseState & SDL_BUTTON_LMASK)
 			{
 				if (mouseY > 0)
 				{
-					origin += forward * -cameraMovementSpeed * elapsedSec;
+					origin += -forward * movementSpeed * elapsedSec;
 				}
 
 				if (mouseY < 0)
 				{
-					origin += forward * cameraMovementSpeed * elapsedSec;
+					origin += forward * movementSpeed * elapsedSec;
 				}
 
 				if (mouseX > 0)
 				{
-					totalYaw += cameraRotationSpeed * elapsedSec;
+					totalYaw += rotationSpeed * elapsedSec;
 				}
 
 				if (mouseX < 0)
 				{
-					totalYaw -= cameraRotationSpeed * elapsedSec;
+					totalYaw -= rotationSpeed * elapsedSec;
 				}
 			}
 			else if (mouseState & SDL_BUTTON_RMASK)
 			{
 				if (mouseX > 0)
 				{
-					totalYaw += cameraRotationSpeed * elapsedSec;
+					totalYaw += rotationSpeed * elapsedSec;
 				}
 
 				if (mouseX < 0)
 				{
-					totalYaw -= cameraRotationSpeed * elapsedSec;
+					totalYaw -= rotationSpeed * elapsedSec;
 				}
 
 				if (mouseY > 0)
 				{
-					totalPitch -= cameraRotationSpeed * elapsedSec;
+					totalPitch -= rotationSpeed * elapsedSec;
 				}
 
 				if (mouseY < 0)
 				{
-					totalPitch += cameraRotationSpeed * elapsedSec;
+					totalPitch += rotationSpeed * elapsedSec;
 				}
 			}
 

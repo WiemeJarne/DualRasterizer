@@ -65,6 +65,9 @@ namespace dae {
 		m_pVehicleMesh->SetGlossinessMap(m_pGlossiness);
 
 		PrintInfo();
+
+		if(m_RenderMode == RenderMode::hardware)
+			m_Camera.rotationSpeed *= 5;
 	}
 
 	Renderer::~Renderer()
@@ -347,6 +350,9 @@ namespace dae {
 
 	void Renderer::ChangeSamplerState()
 	{
+		if (m_RenderMode == RenderMode::software)
+			return;
+
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2); //set console text color to green
 
 		switch (m_pVehicleMesh->GetSamplerStateKind())
@@ -416,11 +422,13 @@ namespace dae {
 		case RenderMode::hardware:
 			m_RenderMode = RenderMode::software;
 			std::cout << "Rasterizer Mode = SOFTWARE\n";
+			m_Camera.rotationSpeed /= 5;
 			break;
 
 		case RenderMode::software:
 			m_RenderMode = RenderMode::hardware;
 			std::cout << "Rasterizer Mode = HARDWARE\n";
+			m_Camera.rotationSpeed *= 5;
 			break;
 		}
 
@@ -490,7 +498,11 @@ namespace dae {
 	void Renderer::ToggleBoundingBoxVisualization()
 	{
 		if (m_RenderMode == RenderMode::software)
+		{
 			m_pVehicleMesh->ToggleBoundingBoxVisualization();
+			m_pFireFXMesh->ToggleBoundingBoxVisualization();
+		}
+			
 	}
 
 	void Renderer::PrintInfo()

@@ -3,11 +3,9 @@
 #include "OpaqueEffect.h"
 #include "Texture.h"
 #include <cassert>
-#include <future> //async
 #include <ppl.h> //parallel_for
 
-#define ASYNC
-//#define PARALLEL_FOR
+#define PARALLEL_FOR
 
 namespace dae
 {
@@ -61,31 +59,59 @@ namespace dae
 	{
 		VertexTransformationFunction(camera);
 
+#ifdef PARALLEL_FOR
+		concurrency::parallel_for(0u, m_AmountOfIndices, 3u, [=, this](uint32_t index)
+			{
+				if (m_Indices[index] == m_Indices[index + 1]
+					|| m_Indices[index + 1] == m_Indices[index + 2]
+					|| m_Indices[index + 2] == m_Indices[index])
+					return;
+
+				Vertex_Out& vertex0{ m_VerticesOut[m_Indices[index]] };
+				Vertex_Out& vertex1{ m_VerticesOut[m_Indices[index + 1]] };
+				Vertex_Out& vertex2{ m_VerticesOut[m_Indices[index + 2]] };
+
+				if (!IsTriangleInFrustum(vertex0, vertex1, vertex2))
+					return;
+
+				TransformVerticesToScreenSpace(vertex0, vertex1, vertex2);
+
+				const Vector2 v0{ vertex0.position.x, vertex0.position.y };
+				const Vector2 v1{ vertex1.position.x, vertex1.position.y };
+				const Vector2 v2{ vertex2.position.x, vertex2.position.y };
+
+				const float area{ Vector2::Cross(v1 - v0, v2 - v0) / 2.f };
+
+				if (ShouldRenderTriangle(m_CullMode, area))
+					RenderTriangle(index / 3, vertex0, vertex1, vertex2, area, pDepthBufferPixels, pBackBuffer, pBackBufferPixels);
+			});
+#else
 		for (int index{}; index < static_cast<int>(m_AmountOfIndices); index += 3)
 		{
 			if (m_Indices[index] == m_Indices[index + 1]
 				|| m_Indices[index + 1] == m_Indices[index + 2]
 				|| m_Indices[index + 2] == m_Indices[index])
 				continue;
-
+		
 			Vertex_Out& vertex0{ m_VerticesOut[m_Indices[index]] };
 			Vertex_Out& vertex1{ m_VerticesOut[m_Indices[index + 1]] };
 			Vertex_Out& vertex2{ m_VerticesOut[m_Indices[index + 2]] };
-
+		
 			if (!IsTriangleInFrustum(vertex0, vertex1, vertex2))
 				continue;
-
+		
 			TransformVerticesToScreenSpace(vertex0, vertex1, vertex2);
-
+		
 			const Vector2 v0{ vertex0.position.x, vertex0.position.y };
 			const Vector2 v1{ vertex1.position.x, vertex1.position.y };
 			const Vector2 v2{ vertex2.position.x, vertex2.position.y };
-
+		
 			const float area{ Vector2::Cross(v1 - v0, v2 - v0) / 2.f };
-
+		
 			if (ShouldRenderTriangle(m_CullMode, area))
 				RenderTriangle(index / 3, vertex0, vertex1, vertex2, area, pDepthBufferPixels, pBackBuffer, pBackBufferPixels);
 		}
+#endif
 	}
 
 	bool OpaqueMesh::ShouldRenderTriangle(CullMode cullMode, float area) const
@@ -228,7 +254,7 @@ namespace dae
 		return ColorRGBA{ 0.f, 0.f, 0.f };
 	}
 
-	void OpaqueMesh::RenderTriangle(uint32_t triangleIndex, const Vertex_Out& vertex0, const Vertex_Out& vertex1, const Vertex_Out& vertex2, float triangleArea, float* pDepthBufferPixels, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels)
+	void OpaqueMesh::RenderTriangle(uint32_t triangleIndex, const Vertex_Out& vertex0, const Vertex_Out& vertex1, const Vertex_Out& vertex2, float triangleArea, float* pDepthBufferPixels, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels) const
 	{
 		const Vector2 v0{ vertex0.position.x, vertex0.position.y };
 		const Vector2 v1{ vertex1.position.x, vertex1.position.y };
@@ -247,12 +273,6 @@ namespace dae
 
 		const uint32_t amountOfPixels{ static_cast<uint32_t>((max.x - min.x) * (max.y - min.y)) };
 
-#ifdef PARALLEL_FOR
-		concurrency::parallel_for(static_cast<uint32_t>(min.y * m_WindowWidth + min.x), static_cast<uint32_t>(max.y * m_WindowWidth + max.x) - 2u, [=, this](uint32_t index)
-			{
-				RenderPixel(index, vertex0, vertex1, vertex2, area, pDepthBufferPixels, pBackBuffer, pBackBufferPixels);
-			});
-#else
 		for (int px{ static_cast<int>(min.x) }; px < max.x; ++px)
 		{
 			for (int py{ static_cast<int>(min.y) }; py < max.y; ++py)
@@ -260,10 +280,9 @@ namespace dae
 				RenderPixel(static_cast<int>(py * m_WindowWidth + px), vertex0, vertex1, vertex2, triangleArea, pDepthBufferPixels, pBackBuffer, pBackBufferPixels);
 			}
 		}
-#endif
 	}
 
-	void OpaqueMesh::RenderPixel(uint32_t pixelIndex, const Vertex_Out& triangleVertex0, const Vertex_Out& triangleVertex1, const Vertex_Out& triangleVertex2, float triangleArea, float* pDepthBufferPixels, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels)
+	void OpaqueMesh::RenderPixel(uint32_t pixelIndex, const Vertex_Out& triangleVertex0, const Vertex_Out& triangleVertex1, const Vertex_Out& triangleVertex2, float triangleArea, float* pDepthBufferPixels, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels) const
 	{
 		Vector2 pixelPos = { static_cast<float>(pixelIndex % static_cast<int>(m_WindowWidth)), static_cast<float>(pixelIndex / static_cast<int>(m_WindowWidth)) };
 
@@ -293,7 +312,7 @@ namespace dae
 		//Update Color in Buffer
 		finalColor.MaxToOne();
 
-		MapPixelToBackBuffer(pixelIndex % static_cast<int>(m_WindowWidth), pixelIndex / static_cast<int>(m_WindowWidth), finalColor, pBackBuffer, pBackBufferPixels);
+		MapPixelToBackBuffer(pixelIndex, finalColor, pBackBuffer, pBackBufferPixels);
 	}
 
 	void OpaqueMesh::CycleShadingMode()
@@ -354,17 +373,5 @@ namespace dae
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15); //set console text color to white
 	}
 
-	void OpaqueMesh::ToggleBoundingBoxVisualization()
-	{
-		m_VisualzeBoundingBox = !m_VisualzeBoundingBox;
-
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 5); //set console text color to purple
-
-		if (m_VisualzeBoundingBox)
-			std::cout << "DepthBuffer Visualization On\n";
-		else
-			std::cout << "DepthBuffer Visualization Off\n";
-
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15); //set console text color to white
-	}
+	
 }

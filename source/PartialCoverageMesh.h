@@ -27,5 +27,7 @@ namespace dae
 		Texture* m_pDiffuseMap{ nullptr };
 
 		virtual ColorRGBA ShadePixel(const Vertex_Out& vertex) const override;
+		virtual void RenderTriangle(uint32_t triangleIndex, const Vertex_Out& vertex0, const Vertex_Out& vertex1, const Vertex_Out& vertex2, float triangleArea, float* pDepthBufferPixels, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels) const override;
+		virtual void RenderPixel(uint32_t pixelIndex, const Vertex_Out& triangleVertex0, const Vertex_Out& triangleVertex1, const Vertex_Out& triangleVertex2, float triangleArea, float* pDepthBufferPixels, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels) const override;
 	};
 }

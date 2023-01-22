@@ -63,6 +63,20 @@ namespace dae
 		}
 	}
 
+	void Mesh::ToggleBoundingBoxVisualization()
+	{
+		m_VisualzeBoundingBox = !m_VisualzeBoundingBox;
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 5); //set console text color to purple
+
+		if (m_VisualzeBoundingBox)
+			std::cout << "DepthBuffer Visualization On\n";
+		else
+			std::cout << "DepthBuffer Visualization Off\n";
+
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15); //set console text color to white
+	}
+
 	void Mesh::RotateYCW(float angle)
 	{
 		m_RotationAngle = angle;
@@ -135,7 +149,7 @@ namespace dae
 		v2.position.y = 0.5f * (1.f - v2.position.y) * m_WindowHeight;
 	}
 	
-	void Mesh::CalculateBoundingBox(const Vector2& v0, const Vector2& v1, const Vector2& v2, Vector2& min, Vector2& max)
+	void Mesh::CalculateBoundingBox(const Vector2& v0, const Vector2& v1, const Vector2& v2, Vector2& min, Vector2& max) const
 	{
 		min = { std::min(v0.x, v1.x), std::min(v0.y, v1.y) };
 		min.x = std::min(min.x, v2.x);
@@ -158,7 +172,7 @@ namespace dae
 		{
 			for (int py{ static_cast<int>(min.y) }; py < max.y; ++py)
 			{
-				MapPixelToBackBuffer(px, py, color, pBackBuffer, pBackBufferPixels);
+				MapPixelToBackBuffer(static_cast<int>(py * m_WindowWidth + px), color, pBackBuffer, pBackBufferPixels);
 			}
 		}
 	}
@@ -264,9 +278,9 @@ namespace dae
 		return pixel;
 	}
 
-	void Mesh::MapPixelToBackBuffer(int px, int py, const ColorRGBA& color, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels) const
+	void Mesh::MapPixelToBackBuffer(int pixelIndex, const ColorRGBA& color, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels) const
 	{
-		pBackBufferPixels[px + (py * static_cast<int>(m_WindowWidth))] = SDL_MapRGB(pBackBuffer->format,
+		pBackBufferPixels[pixelIndex] = SDL_MapRGB(pBackBuffer->format,
 			static_cast<uint8_t>(color.r * 255),
 			static_cast<uint8_t>(color.g * 255),
 			static_cast<uint8_t>(color.b * 255));

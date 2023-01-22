@@ -48,7 +48,6 @@ namespace dae
 		void CycleShadingMode();
 		void ToggleUseNormalMap();
 		void ToggleDepthBufferVisualization();
-		void ToggleBoundingBoxVisualization();
 
 	private:
 		OpaqueEffect* m_pEffect;
@@ -63,7 +62,6 @@ namespace dae
 
 		bool m_UseNormalMap{ true };
 		bool m_VisualizeDepthBuffer{};
-		bool m_VisualzeBoundingBox{};
 
 		ShadingMode m_ShadingMode{ ShadingMode::combined };
 
@@ -72,8 +70,8 @@ namespace dae
 		int amount{};
 
 		bool ShouldRenderTriangle(CullMode cullMode, float area) const;
+		virtual void RenderTriangle(uint32_t triangleIndex, const Vertex_Out& vertex0, const Vertex_Out& vertex1, const Vertex_Out& vertex2, float triangleArea, float* pDepthBufferPixels, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels) const override;
+		virtual void RenderPixel(uint32_t pixelIndex, const Vertex_Out& triangleVertex0, const Vertex_Out& triangleVertex1, const Vertex_Out& triangleVertex2, float triangleArea, float* pDepthBufferPixels, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels) const override;
 		virtual ColorRGBA ShadePixel(const Vertex_Out& vertex) const override;
-		void RenderTriangle(uint32_t triangleIndex, const Vertex_Out& vertex0, const Vertex_Out& vertex1, const Vertex_Out& vertex2, float triangleArea, float* pDepthBufferPixels, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels);
-		void RenderPixel(uint32_t pixelIndex, const Vertex_Out& triangleVertex0, const Vertex_Out& triangleVertex1, const Vertex_Out& triangleVertex2, float triangleArea, float* pDepthBufferPixels, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels);
 	};
 }
