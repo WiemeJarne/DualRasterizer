@@ -44,8 +44,8 @@ namespace dae {
 		m_pAnisotropicSampler = new Sampler(m_pDevice, Sampler::SamplerStateKind::anisotropic);
 
 		//create the meshes and change it samplerState
-		m_pFireFXMesh = new PartialCoverageMesh(m_pDevice, "Resources/fireFX.obj", L"Resources/PosUV.fx", static_cast<float>(m_Width), static_cast<float>(m_Height));
-		m_pVehicleMesh = new OpaqueMesh(m_pDevice, "Resources/vehicle.obj", L"Resources/PosTex.fx", OpaqueMesh::CullMode::BackFace, m_pPointSampler, static_cast<float>(m_Width), static_cast<float>(m_Height));
+		m_pFireFXMesh = new PartialCoverageMesh(m_pDevice, "Resources/fireFX.obj", L"Resources/fireFX.fx", static_cast<float>(m_Width), static_cast<float>(m_Height));
+		m_pVehicleMesh = new OpaqueMesh(m_pDevice, "Resources/vehicle.obj", L"Resources/vehicle.fx", OpaqueMesh::CullMode::BackFace, m_pPointSampler, static_cast<float>(m_Width), static_cast<float>(m_Height));
 		m_pVehicleMesh->SetRasterizerState(pRasterizerState);
 		
 		//initialize the camera
