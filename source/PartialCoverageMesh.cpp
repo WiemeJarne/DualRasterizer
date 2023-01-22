@@ -5,8 +5,8 @@
 
 namespace dae
 {
-	PartialCoverageMesh::PartialCoverageMesh(ID3D11Device* pDevice, const std::string& modelFilePath, const std::wstring& shaderFilePath, CullMode cullMode, float windowWidth, float windowHeight)
-		: Mesh(pDevice, modelFilePath, cullMode, windowWidth, windowHeight)
+	PartialCoverageMesh::PartialCoverageMesh(ID3D11Device* pDevice, const std::string& modelFilePath, const std::wstring& shaderFilePath, float windowWidth, float windowHeight)
+		: Mesh(pDevice, modelFilePath, windowWidth, windowHeight)
 		, m_pEffect{ new PartialCoverageEffect(pDevice, shaderFilePath) }
 	{}
 
@@ -15,7 +15,7 @@ namespace dae
 		delete m_pEffect;
 	}
 
-	void PartialCoverageMesh::RenderInDirectX(ID3D11DeviceContext* pDeviceContext) const
+	void PartialCoverageMesh::RenderHardware(ID3D11DeviceContext* pDeviceContext) const
 	{
 		//1. Set Primitive Topology
 		pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -24,7 +24,7 @@ namespace dae
 		pDeviceContext->IASetInputLayout(m_pEffect->GetInputLayout());
 
 		//3. Set VertexBuffer
-		constexpr UINT stride{ sizeof(Vertex_PosTex) };
+		constexpr UINT stride{ sizeof(Vertex_In) };
 		constexpr UINT offset{ 0 };
 		pDeviceContext->IASetVertexBuffers(0, 1, &m_pVertexBuffer, &stride, &offset);
 
@@ -42,15 +42,9 @@ namespace dae
 		}
 	}
 
-	void  PartialCoverageMesh::RenderInSoftwareRasterizer(const Camera& camera, float* pDepthBufferPixels, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels)
+	void  PartialCoverageMesh::RenderSoftware(const Camera& camera, float* pDepthBufferPixels, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels)
 	{
 		VertexTransformationFunction(camera);
-
-		for (Vertex_Out& vertex : m_VerticesOut)
-		{
-			vertex.position.x = 0.5f * (vertex.position.x + 1.f) * m_WindowWidth;
-			vertex.position.y = 0.5f * (1.f - vertex.position.y) * m_WindowHeight;
-		}
 
 		for (int index{}; index < static_cast<int>(m_AmountOfIndices); index += 3)
 		{
@@ -67,6 +61,8 @@ namespace dae
 
 			IsTriangleInFrustum(vertex0, vertex1, vertex2);
 
+			TransformVerticesToScreenSpace(vertex0, vertex1, vertex2);
+
 			const Vector2 v0{ vertex0.position.x, vertex0.position.y };
 			const Vector2 v1{ vertex1.position.x, vertex1.position.y };
 			const Vector2 v2{ vertex2.position.x, vertex2.position.y };
@@ -76,9 +72,6 @@ namespace dae
 			Vector2 v0ToV1{ v1 - v0 };
 
 			const float area{ Vector2::Cross(v0ToV1, v2 - v0) / 2.f };
-
-			if (!ShouldRenderTriangle(m_CullMode, area))
-				continue;
 
 			float w0{};
 			float w1{};

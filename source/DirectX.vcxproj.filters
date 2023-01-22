@@ -8,6 +8,12 @@
     <Filter Include="Misc">
       <UniqueIdentifier>{72056cb6-72a2-42b7-b05e-376f1ddd957e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Effect">
+      <UniqueIdentifier>{537680c5-2278-4edc-9a22-d657cd1e1393}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Mesh">
+      <UniqueIdentifier>{7be72020-0d9d-4548-96d8-dee6c2945227}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer.h" />
@@ -36,29 +42,31 @@
     <ClInclude Include="ColorRGB.h">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="Mesh.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="Sampler.h">
       <Filter>Misc</Filter>
     </ClInclude>
-    <ClInclude Include="OpaqueEffect.h">
-      <Filter>Misc</Filter>
-    </ClInclude>
-    <ClInclude Include="Effect.h">
-      <Filter>Misc</Filter>
-    </ClInclude>
-    <ClInclude Include="PartialCoverageEffect.h">
-      <Filter>Misc</Filter>
-    </ClInclude>
-    <ClInclude Include="OpaqueMesh.h">
-      <Filter>Misc</Filter>
-    </ClInclude>
-    <ClInclude Include="PartialCoverageMesh.h">
-      <Filter>Misc</Filter>
-    </ClInclude>
     <ClInclude Include="Texture.h">
       <Filter>Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="OpaqueEffect.h">
+      <Filter>Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="Effect.h">
+      <Filter>Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="PartialCoverageEffect.h">
+      <Filter>Effect</Filter>
+    </ClInclude>
+    <ClInclude Include="OpaqueMesh.h">
+      <Filter>Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="PartialCoverageMesh.h">
+      <Filter>Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Mesh</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -80,27 +88,29 @@
       <Filter>Math</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Sampler.cpp">
-      <Filter>Misc</Filter>
-    </ClCompile>
-    <ClCompile Include="OpaqueEffect.cpp">
-      <Filter>Misc</Filter>
-    </ClCompile>
-    <ClCompile Include="Effect.cpp">
-      <Filter>Misc</Filter>
-    </ClCompile>
-    <ClCompile Include="PartialCoverageEffect.cpp">
-      <Filter>Misc</Filter>
-    </ClCompile>
-    <ClCompile Include="OpaqueMesh.cpp">
-      <Filter>Misc</Filter>
-    </ClCompile>
-    <ClCompile Include="PartialCoverageMesh.cpp">
       <Filter>Misc</Filter>
     </ClCompile>
     <ClCompile Include="Texture.cpp">
       <Filter>Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="Effect.cpp">
+      <Filter>Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="OpaqueEffect.cpp">
+      <Filter>Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="PartialCoverageEffect.cpp">
+      <Filter>Effect</Filter>
+    </ClCompile>
+    <ClCompile Include="OpaqueMesh.cpp">
+      <Filter>Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="PartialCoverageMesh.cpp">
+      <Filter>Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Mesh</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

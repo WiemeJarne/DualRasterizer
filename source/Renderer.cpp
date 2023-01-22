@@ -44,22 +44,21 @@ namespace dae {
 		m_pAnisotropicSampler = new Sampler(m_pDevice, Sampler::SamplerStateKind::anisotropic);
 
 		//create the meshes and change it samplerState
-		m_pFireFXMesh = new PartialCoverageMesh(m_pDevice, "Resources/fireFX.obj", L"Resources/PosUV.fx", Mesh::CullMode::None, static_cast<float>(m_Width), static_cast<float>(m_Height));
-		m_pVehicleMesh = new OpaqueMesh(m_pDevice, "Resources/vehicle.obj", L"Resources/PosTex.fx", Mesh::CullMode::BackFace, static_cast<float>(m_Width), static_cast<float>(m_Height));
-		m_pVehicleMesh->ChangeSamplerState(m_pDevice, m_pPointSampler);
+		m_pFireFXMesh = new PartialCoverageMesh(m_pDevice, "Resources/fireFX.obj", L"Resources/PosUV.fx", static_cast<float>(m_Width), static_cast<float>(m_Height));
+		m_pVehicleMesh = new OpaqueMesh(m_pDevice, "Resources/vehicle.obj", L"Resources/PosTex.fx", OpaqueMesh::CullMode::BackFace, m_pPointSampler, static_cast<float>(m_Width), static_cast<float>(m_Height));
 		m_pVehicleMesh->SetRasterizerState(pRasterizerState);
 		
 		//initialize the camera
 		m_Camera.Initialize(45, { 0.f, 0.f, -50.f }, m_Width / static_cast<float>(m_Height));
 
 		//create texture
-		m_pCombustionEffectDiffuse = Texture::LoadFromFile("Resources/fireFX_diffuse.png", m_pDevice);
+		m_pFireFXDiffuse = Texture::LoadFromFile("Resources/fireFX_diffuse.png", m_pDevice);
 		m_pVehicleDiffuse = Texture::LoadFromFile("Resources/vehicle_diffuse.png", m_pDevice);
 		m_pNormal = Texture::LoadFromFile("Resources/vehicle_normal.png", m_pDevice);
 		m_pSpecular = Texture::LoadFromFile("Resources/vehicle_specular.png", m_pDevice);
 		m_pGlossiness = Texture::LoadFromFile("Resources/vehicle_gloss.png", m_pDevice);
 
-		m_pFireFXMesh->SetDiffuseMap(m_pCombustionEffectDiffuse);
+		m_pFireFXMesh->SetDiffuseMap(m_pFireFXDiffuse);
 		m_pVehicleMesh->SetDiffuseMap(m_pVehicleDiffuse);
 		m_pVehicleMesh->SetNormalMap(m_pNormal);
 		m_pVehicleMesh->SetSpecularMap(m_pSpecular);
@@ -95,18 +94,20 @@ namespace dae {
 		if (m_pDevice)
 			m_pDevice->Release();
 
-		delete m_pFireFXMesh;
-		delete m_pVehicleMesh;
-		
-		delete m_pCombustionEffectDiffuse;
+		delete m_pPointSampler;
+		delete m_pLinearSampler;
+		delete m_pAnisotropicSampler;
+
+		delete m_pFireFXDiffuse;
 		delete m_pVehicleDiffuse;
 		delete m_pNormal;
 		delete m_pSpecular;
 		delete m_pGlossiness;
 
-		delete m_pPointSampler;
-		delete m_pLinearSampler;
-		delete m_pAnisotropicSampler;
+		delete m_pFireFXMesh;
+		delete m_pVehicleMesh;
+
+		delete m_pDepthBufferPixels;
 	}
 
 	void Renderer::Update(const Timer* pTimer)
@@ -128,11 +129,11 @@ namespace dae {
 	{
 		switch (m_RenderMode)
 		{
-		case dae::Renderer::RenderMode::Directx:
+		case dae::Renderer::RenderMode::hardware:
 			RenderInDirectX();
 			break;
 
-		case dae::Renderer::RenderMode::SoftwareRasterizer:
+		case dae::Renderer::RenderMode::software:
 			RenderInSoftwareRasterizer();
 			break;
 		}
@@ -171,10 +172,10 @@ namespace dae {
 		//Lock BackBuffer
 		SDL_LockSurface(m_pBackBuffer);
 
-		m_pVehicleMesh->RenderInSoftwareRasterizer(m_Camera, m_pDepthBufferPixels, m_pBackBuffer, m_pBackBufferPixels);
+		m_pVehicleMesh->RenderSoftware(m_Camera, m_pDepthBufferPixels, m_pBackBuffer, m_pBackBufferPixels);
 
 		if(m_RenderFireFX)
-			m_pFireFXMesh->RenderInSoftwareRasterizer(m_Camera, m_pDepthBufferPixels, m_pBackBuffer, m_pBackBufferPixels);
+			m_pFireFXMesh->RenderSoftware(m_Camera, m_pDepthBufferPixels, m_pBackBuffer, m_pBackBufferPixels);
 
 		//@END
 	//Update SDL Surface
@@ -335,10 +336,10 @@ namespace dae {
 		m_pDeviceContext->ClearDepthStencilView(m_pDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 
 		//2. Set pipeline + invoke drawcalls (= render)
-		m_pVehicleMesh->RenderInDirectX(m_pDeviceContext);
+		m_pVehicleMesh->RenderHardware(m_pDeviceContext);
 
 		if (m_RenderFireFX)
-			m_pFireFXMesh->RenderInDirectX(m_pDeviceContext);
+			m_pFireFXMesh->RenderHardware(m_pDeviceContext);
 
 		//3. Present BackBuffer (swap)
 		m_pSwapChain->Present(0, 0);
@@ -351,17 +352,17 @@ namespace dae {
 		switch (m_pVehicleMesh->GetSamplerStateKind())
 		{
 		case Sampler::SamplerStateKind::point:
-			m_pVehicleMesh->ChangeSamplerState(m_pDevice, m_pLinearSampler);
+			m_pVehicleMesh->ChangeSamplerState(m_pLinearSampler);
 			std::cout << "Sampler Filter = LINEAR\n";
 			break;
 
 		case Sampler::SamplerStateKind::linear:
-			m_pVehicleMesh->ChangeSamplerState(m_pDevice, m_pAnisotropicSampler);
+			m_pVehicleMesh->ChangeSamplerState(m_pAnisotropicSampler);
 			std::cout << "Sampler Filter = ANISOTROPIC\n";
 			break;
 
 		case Sampler::SamplerStateKind::anisotropic:
-			m_pVehicleMesh->ChangeSamplerState(m_pDevice, m_pPointSampler);
+			m_pVehicleMesh->ChangeSamplerState(m_pPointSampler);
 			std::cout << "Sampler Filter = POINT\n";
 			break;
 		}
@@ -377,19 +378,19 @@ namespace dae {
 		{
 		case D3D11_CULL_BACK:
 			m_RasterizerDesc.CullMode = D3D11_CULL_FRONT;
-			m_pVehicleMesh->SetCullMode(Mesh::CullMode::FrontFace);
+			m_pVehicleMesh->SetCullMode(OpaqueMesh::CullMode::FrontFace);
 			std::cout << "CullMode = FRONT\n";
 			break;
 		
 		case D3D11_CULL_FRONT:
 			m_RasterizerDesc.CullMode = D3D11_CULL_NONE;
-			m_pVehicleMesh->SetCullMode(Mesh::CullMode::None);
+			m_pVehicleMesh->SetCullMode(OpaqueMesh::CullMode::None);
 			std::cout << "CullMode = NONE\n";
 			break;
 
 		case D3D11_CULL_NONE:
 			m_RasterizerDesc.CullMode = D3D11_CULL_BACK;
-			m_pVehicleMesh->SetCullMode(Mesh::CullMode::BackFace);
+			m_pVehicleMesh->SetCullMode(OpaqueMesh::CullMode::BackFace);
 			std::cout << "CullMode = BACK\n";
 			break;
 		}
@@ -412,13 +413,13 @@ namespace dae {
 
 		switch (m_RenderMode)
 		{
-		case RenderMode::Directx:
-			m_RenderMode = RenderMode::SoftwareRasterizer;
+		case RenderMode::hardware:
+			m_RenderMode = RenderMode::software;
 			std::cout << "Rasterizer Mode = SOFTWARE\n";
 			break;
 
-		case RenderMode::SoftwareRasterizer:
-			m_RenderMode = RenderMode::Directx;
+		case RenderMode::software:
+			m_RenderMode = RenderMode::hardware;
 			std::cout << "Rasterizer Mode = HARDWARE\n";
 			break;
 		}
@@ -470,25 +471,25 @@ namespace dae {
 
 	void Renderer::CycleShadingMode()
 	{
-		if (m_RenderMode == RenderMode::SoftwareRasterizer)
+		if (m_RenderMode == RenderMode::software)
 			m_pVehicleMesh->CycleShadingMode();
 	}
 
 	void Renderer::ToggleNormalMap()
 	{
-		if (m_RenderMode == RenderMode::SoftwareRasterizer)
+		if (m_RenderMode == RenderMode::software)
 			m_pVehicleMesh->ToggleUseNormalMap();
 	}
 
 	void Renderer::ToggleDepthBufferVisualization()
 	{
-		if (m_RenderMode == RenderMode::SoftwareRasterizer)
+		if (m_RenderMode == RenderMode::software)
 			m_pVehicleMesh->ToggleDepthBufferVisualization();
 	}
 
 	void Renderer::ToggleBoundingBoxVisualization()
 	{
-		if (m_RenderMode == RenderMode::SoftwareRasterizer)
+		if (m_RenderMode == RenderMode::software)
 			m_pVehicleMesh->ToggleBoundingBoxVisualization();
 	}
 

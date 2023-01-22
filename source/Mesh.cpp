@@ -9,10 +9,9 @@
 
 namespace dae
 {
-	Mesh::Mesh(ID3D11Device* pDevice, const std::string& modelFilePath, CullMode cullMode, float windowWidth, float windowHeight)
+	Mesh::Mesh(ID3D11Device* pDevice, const std::string& modelFilePath, float windowWidth, float windowHeight)
 		: m_RotationAngle{}
-		, m_RotationSpeed{ 0.785398163f }
-		, m_CullMode{ cullMode }
+		, m_RotationSpeed{ 0.785398163f } //45 degrees per second
 		, m_WindowWidth{ windowWidth }
 		, m_WindowHeight{ windowHeight }
 	{
@@ -22,7 +21,7 @@ namespace dae
 		//Create vertex buffer
 		D3D11_BUFFER_DESC bd{};
 		bd.Usage = D3D11_USAGE_IMMUTABLE;
-		bd.ByteWidth = sizeof(Vertex_PosTex) * static_cast<uint32_t>(m_Vertices.size());
+		bd.ByteWidth = sizeof(Vertex_In) * static_cast<uint32_t>(m_Vertices.size());
 		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		bd.CPUAccessFlags = 0;
 		bd.MiscFlags = 0;
@@ -62,8 +61,6 @@ namespace dae
 		{
 			m_pIndexBuffer->Release();
 		}
-
-		
 	}
 
 	void Mesh::RotateYCW(float angle)
@@ -77,7 +74,7 @@ namespace dae
 		m_VerticesOut.clear();
 		Matrix worldViewProjectionMatrix{ m_WorldMatrix * camera.viewMatrix * camera.projectionMatrix };
 
-		for (const Vertex_PosTex& vertex : m_Vertices)
+		for (const Vertex_In& vertex : m_Vertices)
 		{
 			Vertex_Out vertexOut{};
 
@@ -106,6 +103,66 @@ namespace dae
 		}
 	}
 
+	bool Mesh::IsTriangleInFrustum(const Vertex_Out& v0, const Vertex_Out& v1, const Vertex_Out& v2)
+	{
+		if (v0.position.x < -1.f || v0.position.x > 1.f
+			|| v1.position.x < -1.f || v1.position.x > 1.f
+			|| v2.position.x < -1.f || v2.position.x > 1.f)
+			return false;
+		
+		if (v0.position.y < -1.f || v0.position.y > 1.f
+			|| v1.position.y < -1.f || v1.position.y > 1.f
+			|| v2.position.y < -1.f || v2.position.y > 1.f)
+			return false;
+
+		if (v0.position.z < 0.f || v0.position.z > 1.f
+			|| v1.position.z < 0.f || v1.position.z > 1.f
+			|| v2.position.z < 0.f || v2.position.z > 1.f)
+			return false;
+
+		return true;
+	}
+
+	void Mesh::TransformVerticesToScreenSpace(Vertex_Out& v0, Vertex_Out& v1, Vertex_Out& v2)
+	{
+		v0.position.x = 0.5f * (v0.position.x + 1.f) * m_WindowWidth;
+		v0.position.y = 0.5f * (1.f - v0.position.y) * m_WindowHeight;
+
+		v1.position.x = 0.5f * (v1.position.x + 1.f) * m_WindowWidth;
+		v1.position.y = 0.5f * (1.f - v1.position.y) * m_WindowHeight;
+
+		v2.position.x = 0.5f * (v2.position.x + 1.f) * m_WindowWidth;
+		v2.position.y = 0.5f * (1.f - v2.position.y) * m_WindowHeight;
+	}
+	
+	void Mesh::CalculateBoundingBox(const Vector2& v0, const Vector2& v1, const Vector2& v2, Vector2& min, Vector2& max)
+	{
+		min = { std::min(v0.x, v1.x), std::min(v0.y, v1.y) };
+		min.x = std::min(min.x, v2.x);
+		min.x = std::max(min.x, 0.f);
+		min.y = std::min(min.y, v2.y);
+		min.y = std::max(min.y, 0.f);
+
+		max = { std::max(v0.x, v1.x), std::max(v0.y, v1.y) };
+		max.x = std::max(max.x, v2.x);
+		max.x = std::min(max.x, m_WindowWidth);
+		max.y = std::max(max.y, v2.y);
+		max.y = std::min(max.y, m_WindowHeight);
+	}
+
+	void Mesh::VisualizeBoundingBox(const Vector2& min, const Vector2& max, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels) const
+	{
+		ColorRGBA color{ 1.f, 1.f, 1.f };
+
+		for (int px{ static_cast<int>(min.x) }; px < max.x; ++px)
+		{
+			for (int py{ static_cast<int>(min.y) }; py < max.y; ++py)
+			{
+				MapPixelToBackBuffer(px, py, color, pBackBuffer, pBackBufferPixels);
+			}
+		}
+	}
+	
 	bool Mesh::IsPixelInTriange(const Vector2& v0, const Vector2& v1, const Vector2& v2, const Vector2& pixelPos) const
 	{
 		float cross1{ Vector2::Cross(v2 - v1, pixelPos - v1) };
@@ -135,73 +192,6 @@ namespace dae
 		if (cross1IsPositive && cross2IsPositive && cross3IsPositive
 			|| !cross1IsPositive && !cross2IsPositive && !cross3IsPositive)
 			return true;
-
-		return false;
-	}
-
-	void Mesh::CalculateBoundingBox(const Vector2& v0, const Vector2& v1, const Vector2& v2, Vector2& min, Vector2& max)
-	{
-		min = { std::min(v0.x, v1.x), std::min(v0.y, v1.y) };
-		min.x = std::min(min.x, v2.x);
-		min.x = std::max(min.x, 0.f);
-		min.y = std::min(min.y, v2.y);
-		min.y = std::max(min.y, 0.f);
-
-		max = { std::max(v0.x, v1.x), std::max(v0.y, v1.y) };
-		max.x = std::max(max.x, v2.x);
-		max.x = std::min(max.x, m_WindowWidth);
-		max.y = std::max(max.y, v2.y);
-		max.y = std::min(max.y, m_WindowHeight);
-	}
-
-	void Mesh::VisualizeBoundingBox(const Vector2& min, const Vector2& max, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels) const
-	{
-		ColorRGBA color{ 1.f, 1.f, 1.f };
-
-		for (int px{ static_cast<int>(min.x) }; px < max.x; ++px)
-		{
-			for (int py{ static_cast<int>(min.y) }; py < max.y; ++py)
-			{
-				MapPixelToBackBuffer(px, py, color, pBackBuffer, pBackBufferPixels);
-			}
-		}
-	}
-
-	bool Mesh::IsTriangleInFrustum(const Vertex_Out& v0, const Vertex_Out& v1, const Vertex_Out& v2)
-	{
-		if (v0.position.x < 0.f || v0.position.x > m_WindowWidth
-			|| v1.position.x < 0.f || v1.position.x > m_WindowWidth
-			|| v2.position.x < 0.f || v2.position.x > m_WindowWidth)
-			return false;
-
-		if (v0.position.y < 0.f || v0.position.y > m_WindowHeight
-			|| v1.position.y < 0.f || v1.position.y > m_WindowHeight
-			|| v2.position.y < 0.f || v2.position.y > m_WindowHeight)
-			return false;
-
-		if (v0.position.z < 0.f || v0.position.z > 1.f
-			|| v1.position.z < 0.f || v1.position.z > 1.f
-			|| v2.position.z < 0.f || v2.position.z > 1.f)
-			return false;
-
-		return true;
-	}
-
-	bool Mesh::ShouldRenderTriangle(CullMode cullMode, float area) const
-	{
-		switch (cullMode)
-		{
-		case dae::Mesh::CullMode::BackFace:
-			if (area > 0) return true;
-			break;
-
-		case dae::Mesh::CullMode::FrontFace:
-			if (area < 0) return true;
-			break;
-
-		case dae::Mesh::CullMode::None:
-			return true;
-		}
 
 		return false;
 	}
@@ -274,7 +264,7 @@ namespace dae
 		return pixel;
 	}
 
-	void Mesh::MapPixelToBackBuffer(int px, int py, ColorRGBA color, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels) const
+	void Mesh::MapPixelToBackBuffer(int px, int py, const ColorRGBA& color, SDL_Surface* pBackBuffer, uint32_t* pBackBufferPixels) const
 	{
 		pBackBufferPixels[px + (py * static_cast<int>(m_WindowWidth))] = SDL_MapRGB(pBackBuffer->format,
 			static_cast<uint8_t>(color.r * 255),

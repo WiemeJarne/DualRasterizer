@@ -11,7 +11,7 @@ namespace dae
 		//Just parses vertices and indices
 #pragma warning(push)
 #pragma warning(disable : 4505) //Warning unreferenced local function
-		static bool ParseOBJ(const std::string& filename, std::vector<Mesh::Vertex_PosTex>& vertices, std::vector<uint32_t>& indices, bool flipAxisAndWinding = true)
+		static bool ParseOBJ(const std::string& filename, std::vector<Mesh::Vertex_In>& vertices, std::vector<uint32_t>& indices, bool flipAxisAndWinding = true)
 		{
 			std::ifstream file(filename);
 			if (!file)
@@ -66,7 +66,7 @@ namespace dae
 					//add the material index as attibute to the attribute array
 					//
 					// Faces or triangles
-					Mesh::Vertex_PosTex vertex{};
+					Mesh::Vertex_In vertex{};
 					size_t iPosition, iTexCoord, iNormal;
 				
 					uint32_t tempIndices[3];

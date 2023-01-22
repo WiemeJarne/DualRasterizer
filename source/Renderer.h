@@ -36,8 +36,6 @@ namespace dae
 		void CycleCullModes();
 		void ToggleUseUniformClearColor();
 		
-
-
 	private:
 		SDL_Window* m_pWindow{};
 
@@ -62,7 +60,7 @@ namespace dae
 		Sampler* m_pAnisotropicSampler;
 
 		//Textures
-		Texture* m_pCombustionEffectDiffuse;
+		Texture* m_pFireFXDiffuse;
 		Texture* m_pVehicleDiffuse;
 		Texture* m_pNormal;
 		Texture* m_pSpecular;
@@ -83,11 +81,11 @@ namespace dae
 
 		enum class RenderMode
 		{
-			Directx,
-			SoftwareRasterizer
+			hardware,
+			software
 		};
 
-		RenderMode m_RenderMode{ RenderMode::Directx };
+		RenderMode m_RenderMode{ RenderMode::hardware };
 
 		bool m_IsRotating{ true };
 		bool m_UseUniformClearColor{ false };
